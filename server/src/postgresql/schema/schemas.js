@@ -22,7 +22,7 @@ const createModels = async () => {
     foreignKey: "permId",
   });
 
-  await sequelize.sync({ force: true });
+  await sequelize.sync();
 };
 
 export default createModels;

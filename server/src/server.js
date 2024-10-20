@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import userRouter from "./routes/user-routes.js";
 import createRoles from "./utils/createData.js";
 import { authenticate } from "./postgresql/db-connector.js";
+import createModels from "./postgresql/schema/schemas.js";
 
 const PORT = 5000;
 
@@ -25,10 +26,11 @@ app.listen(PORT, () => console.log(`App is running on port ${PORT}`));
 
 authenticate();
 
-import createModels from "./postgresql/schema/schemas.js";
-
 await createModels();
 
-createRoles.createPerms();
-createRoles.createAdmin();
-createRoles.createDefault();
+// createRoles.createPerms();
+// createRoles.createAdmin();
+// createRoles.createDefault();
+// createRoles.createSubAdmin();
+// createRoles.createAdminProfile();
+// createRoles.createSubAdminProfile();

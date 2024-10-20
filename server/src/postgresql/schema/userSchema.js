@@ -10,11 +10,13 @@ const userModel = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
       primaryKey: true,
+
       defaultValue: () => uuidv4(),
     },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     password: {
       type: DataTypes.STRING,
@@ -30,7 +32,7 @@ const userModel = sequelize.define(
       },
       beforeUpdate: async (user) => {
         if (user.changed("password")) {
-          user.password = await bcrypt.hash(user.password,10);
+          user.password = await bcrypt.hash(user.password, 10);
         }
       },
     },

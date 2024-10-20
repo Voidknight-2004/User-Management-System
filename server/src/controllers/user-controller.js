@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import userModel from "../postgresql/schema/userSchema.js";
 import roleModel from "../postgresql/schema/rolesSchema.js";
 import bcrypt from "bcrypt";
+import { sequelize } from "../postgresql/db-connector.js";
 
 const SECRET_KEY = "f27om2feQYLKQZl6uBkw";
 
@@ -26,6 +27,7 @@ const signup = async (req, res) => {
         },
       });
       user.addRole(role);
+      await sequelize.sync(); //syncing
       res.status(201).send("User registered");
     } catch (err) {
       console.log(err);
@@ -46,8 +48,12 @@ const signin = async (req, res) => {
 
   if (isMatch && existingUser) {
     const roleInstance = await existingUser.getRoles();
-    const roleArray = roleInstance.map(roleInstance => roleInstance.dataValues.role);
-    const token = jwt.sign({ username,roles:roleArray }, SECRET_KEY, { expiresIn: "10h" });
+    const roleArray = roleInstance.map(
+      (roleInstance) => roleInstance.dataValues.role
+    );
+    const token = jwt.sign({ username, roles: roleArray }, SECRET_KEY, {
+      expiresIn: "10h",
+    });
     res.status(201).json({ token });
   } else {
     res.status(409).send("Invalid credentials");
