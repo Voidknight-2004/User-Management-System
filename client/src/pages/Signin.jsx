@@ -69,7 +69,7 @@ const Signin = () => {
 
   return (
     <div className="App">
-      <section className="rounded-2xl">
+      <section className="rounded-2xl text-white">
         <p
           ref={errRef}
           className={errMsg ? "errmsg" : "offscreen"}

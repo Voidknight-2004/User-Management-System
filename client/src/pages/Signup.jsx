@@ -90,14 +90,14 @@ const Signup = () => {
   return (
     <div className="App">
       {success ? (
-        <section className="flex-col justify-center gap-4">
+        <section className="flex-col justify-center gap-4 text-white">
           <h1 className="text-center font-semibold text-xl  ">Success!</h1>
           <p className="text-center text-xs underline">
             <a href="/signin">Sign In</a>
           </p>
         </section>
       ) : (
-        <section className="rounded-2xl">
+        <section className="rounded-2xl text-white">
           <p
             ref={errRef}
             className={errMsg ? "errmsg" : "offscreen"}
