@@ -1,66 +1,110 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "../api/axios";
+import Cookies from "js-cookie";
 
 const UserManagementPage = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      username: "john_doe",
-      roles: [
-        { id: 1, name: "Admin" },
-        { id: 2, name: "Editor" },
-      ],
-    },
-    {
-      id: 2,
-      username: "jane_smith",
-      roles: [
-        { id: 3, name: "Author" },
-        { id: 4, name: "Contributor" },
-      ],
-    },
-    {
-      id: 3,
-      username: "bob_johnson",
-      roles: [{ id: 5, name: "Subscriber" }],
-    },
-  ]);
-
-  const [newRoleOptions, setNewRoleOptions] = useState([
-    { id: 6, name: "Manager" },
-    { id: 7, name: "Reviewer" },
-    { id: 8, name: "Moderator" },
-  ]);
-
+  const [users, setUsers] = useState([]);
+  const [newRoleOptions, setNewRoleOptions] = useState([]);
   const [selectedNewRole, setSelectedNewRole] = useState(null);
   const [showAddRoleDropdown, setShowAddRoleDropdown] = useState(null);
+  const [token, setToken] = useState(null);
 
-  const handleDeleteRole = (userId, roleId) => {
-    const updatedUsers = users.map((user) => {
-      if (user.id === userId) {
-        return {
-          ...user,
-          roles: user.roles.filter((role) => role.id !== roleId),
-        };
-      }
-      return user;
-    });
-    setUsers(updatedUsers);
+  const getUserData = async () => {
+    try {
+      const response = await axios.get(`/users/getAll`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = response.data;
+      console.log(data)
+      if (response.status === 201) setUsers(data);
+
+      const roles = data.reduce((acc, user) => {
+        user.Roles.forEach((role) => {
+          if (!acc.some((r) => r.roleId === role.roleId)) {
+            acc.push(role);
+          }
+        });
+        return acc;
+      }, []);
+      console.log("hello")
+      console.log(roles)
+      setNewRoleOptions(roles);
+    } catch (err) {
+      console.log("Could not fetch users");
+    }
   };
 
-  const handleAddRole = (userId) => {
-    if (selectedNewRole) {
-      const updatedUsers = users.map((user) => {
-        if (user.id === userId) {
-          return {
-            ...user,
-            roles: [...user.roles, selectedNewRole],
-          };
+  useEffect(() => {
+    getUserData();
+  }, []);
+
+  useEffect(() => {
+    setToken(Cookies.get("token"));
+  }, []);
+
+  const handleDeleteRole = async (username, role) => {
+    try {
+      const response = await axios.delete(
+        `/users/${username}/deleterole/${role}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-        return user;
-      });
-      setUsers(updatedUsers);
-      setSelectedNewRole(null);
-      setShowAddRoleDropdown(null);
+      );
+      if (response.status === 201) {
+        getUserData();
+      }
+    } catch (err) {
+      if (!err?.response) {
+        console.log(err.response);
+        alert("No Server Response");
+      } else if (err.response?.status === 402) {
+        console.log(err.response);
+        alert("No permission to delete");
+      } else if (err.response?.status === 404) {
+        console.log(err.response);
+        alert("Role not found");
+      } else {
+        console.log(err.response);
+        alert("Role could not be deleted");
+      }
+    }
+  };
+
+  const handleAddRole = async (username) => {
+    if (selectedNewRole) {
+      try {
+        const response = await axios.post(
+          `/users/${username}/addrole/${selectedNewRole}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.status === 201) {
+          getUserData();
+          setSelectedNewRole(null);
+          setShowAddRoleDropdown(null);
+        }
+      } catch (err) {
+        if (!err?.response) {
+          console.log(err.response);
+          alert("No Server Response");
+        } else if (err.response?.status === 402) {
+          alert("Role already exists!");
+        } else if (err.response?.status === 403) {
+          alert("Role could not be added!");
+        } else {
+          alert("Unspecified error");
+        }
+      }
     }
   };
 
@@ -88,14 +132,17 @@ const UserManagementPage = () => {
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="border-b border-gray-200">
+            <tr key={user.userId} className="border-b border-gray-200">
               <td className="px-4 py-2">{user.username}</td>
               <td className="px-4 py-2">
-                {user.roles.map((role) => (
-                  <div key={role.id} className="flex items-center space-x-2">
-                    <span className="text-gray-600">{role.name}</span>
+                {user.Roles.map((role) => (
+                  <div
+                    key={role.roleId}
+                    className="flex items-center space-x-2"
+                  >
+                    <span className="text-gray-600">{role.role}</span>
                     <button
-                      onClick={() => handleDeleteRole(user.id, role.id)}
+                      onClick={() => handleDeleteRole(user.username, role.name)}
                       className="text-red-500 hover:text-red-700 focus:outline-none"
                     >
                       Delete Role
@@ -106,18 +153,18 @@ const UserManagementPage = () => {
               <td className="px-4 py-2">
                 <div className="relative inline-block">
                   <button
-                    onClick={() => toggleAddRoleDropdown(user.id)}
+                    onClick={() => toggleAddRoleDropdown(user.username)}
                     className="bg-blue-500 text-white rounded-md px-2 py-1 hover:bg-blue-700 focus:outline-none"
                   >
                     Add Role
                   </button>
-                  {showAddRoleDropdown === user.id && (
+                  {showAddRoleDropdown === user.userId && (
                     <div className="absolute z-10 bg-white shadow-lg rounded-md mt-2 w-48">
                       {newRoleOptions.map((role) => (
                         <div
-                          key={role.id}
+                          key={role.roleId}
                           onClick={() => {
-                            handleNewRoleSelect(user.id, role);
+                            handleNewRoleSelect(user.username, role);
                             setShowAddRoleDropdown((prev) => !prev);
                           }}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
@@ -130,7 +177,7 @@ const UserManagementPage = () => {
                   {selectedNewRole && (
                     <button
                       onClick={() => {
-                        handleAddRole(user.id);
+                        handleAddRole(user.username);
                         setShowAddRoleDropdown(null);
                       }}
                       className="ml-2 bg-green-500 text-white rounded-md px-2 py-1 hover:bg-green-700 focus:outline-none"

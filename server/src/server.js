@@ -3,6 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import userRouter from "./routes/user-routes.js";
 import createRoles from "./utils/createData.js";
+import roleRouter from "./routes/role-routes.js";
 import { authenticate } from "./postgresql/db-connector.js";
 import createModels from "./postgresql/schema/schemas.js";
 
@@ -21,6 +22,7 @@ app.use(
 );
 
 app.use("/", userRouter);
+app.use("/", roleRouter);
 
 app.listen(PORT, () => console.log(`App is running on port ${PORT}`));
 

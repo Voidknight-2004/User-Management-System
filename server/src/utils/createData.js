@@ -18,7 +18,7 @@ const createAdmin = async () => {
   try {
     const permsList = await permissionModel.findAll();
     const roles = await roleModel.create({ role: "admin" });
-    roles.addPermissions(permsList);
+    await roles.addPermissions(permsList);
   } catch (err) {
     console.log("Admin already exists");
   }
@@ -34,7 +34,7 @@ const createDefault = async () => {
     const role = await roleModel.create({
       role: "default",
     });
-    role.addPermission(perm);
+    await role.addPermission(perm);
   } catch (err) {
     console.log("Default role already exists");
   }
@@ -50,7 +50,7 @@ const createSubAdmin = async () => {
     const role = await roleModel.create({
       role: "SubAdmin",
     });
-    role.addPermission(perm);
+    await role.addPermission(perm);
   } catch (err) {
     console.log("SubAdmin role already exists");
   }
@@ -67,7 +67,7 @@ const createSubAdminProfile = async () => {
         [Op.or]: [{ role: "SubAdmin" }, { role: "default" }],
       },
     });
-    user.addRoles(Roles);
+    await user.addRoles(Roles);
   } catch (err) {
     console.log(err);
   }
@@ -81,7 +81,7 @@ const createAdminProfile = async () => {
     });
     const allRoles = await roleModel.findAll();
 
-    user.addRoles(allRoles);
+    await user.addRoles(allRoles);
   } catch (err) {
     console.log("Admin already exists");
   }

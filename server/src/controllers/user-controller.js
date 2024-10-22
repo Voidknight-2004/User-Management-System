@@ -26,8 +26,8 @@ const signup = async (req, res) => {
           role: "default",
         },
       });
-      user.addRole(role);
-      await sequelize.sync(); //syncing
+      await user.addRole(role);
+      await sequelize.sync();
       res.status(201).send("User registered");
     } catch (err) {
       console.log(err);
@@ -60,9 +60,33 @@ const signin = async (req, res) => {
   }
 };
 
+const getUsers = async (req, res) => {
+  try {
+    const userInstances = await userModel.findAll({
+      include: [
+        {
+          model: roleModel,
+          as: "Roles",
+          attributes: ["roleId", "role"],
+          through: { attributes: [] },
+        },
+      ],
+    });
+    if (userInstances) {
+      res.status(201).json(userInstances);
+    } else {
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (err) {
+    console.error("Error getting user:", err);
+    res.status(500).json({ error: "Could not get user" });
+  }
+};
+
 const userController = {
   signup,
   signin,
+  getUsers,
 };
 
 export default userController;

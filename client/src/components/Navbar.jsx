@@ -61,7 +61,7 @@ const Navbar = ({ sidebarToggle, setSidebarToggle }) => {
           <div className="relative">
             <select
               id="select-menu"
-              className="block appearance-none w-28 h-7 bg-white border border-gray-300 hover:border-gray-400 pr-4 text-center pr-8 text-gray-700 text-sm focus:ring-blue-500 focus:border-blue-500 rounded-md"
+              className="block appearance-none w-28 h-7 bg-white border border-gray-300 hover:border-gray-400 pr-4 text-center text-gray-700 text-sm focus:ring-blue-500 focus:border-blue-500 rounded-md"
               value={selectedOption}
               onChange={handleOptionChange}
             >
