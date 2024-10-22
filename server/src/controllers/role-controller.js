@@ -1,10 +1,30 @@
 import { sequelize } from "../postgresql/db-connector.js";
+import jwt from "jsonwebtoken";
+import permissionModel from "../postgresql/schema/permissionSchema.js";
 import roleModel from "../postgresql/schema/rolesSchema.js";
 import userModel from "../postgresql/schema/userSchema.js";
+const SECRET_KEY = "f27om2feQYLKQZl6uBkw";
 
 const deleteRole = async (req, res) => {
   try {
     const { username, role } = req.params;
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const currentUser = decoded.username;
+
+    const currentUserInstance = await userModel.findOne({
+      where: {
+        username: currentUser,
+      },
+      include: [
+        {
+          model: roleModel,
+          as: "Roles",
+          attributes: ["roleId", "role"],
+          through: { attributes: [] },
+        },
+      ],
+    });
 
     const userInstance = await userModel.findOne({
       where: {
@@ -13,26 +33,33 @@ const deleteRole = async (req, res) => {
       include: [
         {
           model: roleModel,
-          as: "roles",
+          as: "Roles",
           attributes: ["roleId", "role"],
           through: { attributes: [] },
         },
       ],
     });
-
     const checkPerms = async () => {
-      for (const eachrole of userInstance.roles) {
+      const deleteRolePerm = await permissionModel.findOne({
+        where: {
+          permissions: "delete",
+        },
+      });
+
+      for (const eachrole of currentUserInstance.dataValues.Roles) {
+        console.log("hello im here");
         const roleInstance = await roleModel.findOne({
           where: {
-            role: eachrole.name,
+            role: eachrole.role,
           },
         });
-        if (await roleInstance.hasPermission("delete")) return true;
+        if (await roleInstance.hasPermission(deleteRolePerm)) return true;
       }
+      return false;
     };
-
-    if (checkPerms()) {
-      const roleToDelete = userInstance.roles.find((r) => r.role === role);
+    const isOk = await checkPerms();
+    if (isOk) {
+      const roleToDelete = userInstance.dataValues.Roles.find((r) => r.role === role);
       if (roleToDelete) {
         await userInstance.removeRole(roleToDelete);
 
@@ -43,7 +70,7 @@ const deleteRole = async (req, res) => {
           include: [
             {
               model: roleModel,
-              as: "roles",
+              as: "Roles",
               attributes: ["roleId", "role"],
               through: { attributes: [] },
             },
@@ -66,17 +93,27 @@ const deleteRole = async (req, res) => {
 const createRole = async (req, res) => {
   try {
     const { username, role } = req.params;
+    console.log(role, username);
     const userInstance = await userModel.findOne({
       where: {
         username: username,
       },
     });
-    if (userInstance.hasRole(role)) res.status(402).send("Role already exists");
+
+    const roleInstance = await roleModel.findOne({
+      where: {
+        role: role,
+      },
+    });
+
+    if (await userInstance.hasRole(roleInstance))
+      res.status(402).send("Role already exists");
     else {
-      await userInstance.addRole(role);
+      await userInstance.addRole(roleInstance);
       res.status(201).send("Role added!");
     }
-  } catch {
+  } catch (err) {
+    console.log(err);
     res.status(403).send("Role could not be added");
   }
 };

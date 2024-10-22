@@ -5,6 +5,6 @@ import verifyToken from "../middleware/verifyToken.js";
 const userRouter = express.Router();
 userRouter.post("/signup", userController.signup);
 userRouter.post("/signin", userController.signin);
-userRouter.get("/users/getAll",  userController.getUsers);
+userRouter.get("/users/getAll", userController.getUsers);
 
 export default userRouter;

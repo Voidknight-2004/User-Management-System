@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "../api/axios";
 import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
 const UserManagementPage = () => {
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentuser] = useState("");
   const [newRoleOptions, setNewRoleOptions] = useState([]);
   const [selectedNewRole, setSelectedNewRole] = useState(null);
   const [showAddRoleDropdown, setShowAddRoleDropdown] = useState(null);
@@ -18,7 +20,6 @@ const UserManagementPage = () => {
         },
       });
       const data = response.data;
-      console.log(data)
       if (response.status === 201) setUsers(data);
 
       const roles = data.reduce((acc, user) => {
@@ -29,8 +30,6 @@ const UserManagementPage = () => {
         });
         return acc;
       }, []);
-      console.log("hello")
-      console.log(roles)
       setNewRoleOptions(roles);
     } catch (err) {
       console.log("Could not fetch users");
@@ -38,11 +37,12 @@ const UserManagementPage = () => {
   };
 
   useEffect(() => {
-    getUserData();
-  }, []);
-
-  useEffect(() => {
-    setToken(Cookies.get("token"));
+    const storedToken = Cookies.get("token");
+    if (storedToken) {
+      setToken(storedToken);
+      setCurrentuser(jwtDecode(storedToken).username);
+      getUserData();
+    }
   }, []);
 
   const handleDeleteRole = async (username, role) => {
@@ -108,8 +108,8 @@ const UserManagementPage = () => {
     }
   };
 
-  const handleNewRoleSelect = (userId, role) => {
-    setSelectedNewRole(role);
+  const handleNewRoleSelect = (userId, rolename) => {
+    setSelectedNewRole(rolename);
     setShowAddRoleDropdown(userId);
   };
 
@@ -121,6 +121,9 @@ const UserManagementPage = () => {
     <div className="container mx-auto px-4 py-2">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">User Management</h1>
+        <h2>
+          <a href="/home">Go home</a>
+        </h2>
       </div>
       <table className="table-auto w-full rounded-lg shadow">
         <thead>
@@ -142,7 +145,7 @@ const UserManagementPage = () => {
                   >
                     <span className="text-gray-600">{role.role}</span>
                     <button
-                      onClick={() => handleDeleteRole(user.username, role.name)}
+                      onClick={() => handleDeleteRole(user.username, role.role)}
                       className="text-red-500 hover:text-red-700 focus:outline-none"
                     >
                       Delete Role
@@ -153,7 +156,7 @@ const UserManagementPage = () => {
               <td className="px-4 py-2">
                 <div className="relative inline-block">
                   <button
-                    onClick={() => toggleAddRoleDropdown(user.username)}
+                    onClick={() => toggleAddRoleDropdown(user.userId)}
                     className="bg-blue-500 text-white rounded-md px-2 py-1 hover:bg-blue-700 focus:outline-none"
                   >
                     Add Role
@@ -164,12 +167,12 @@ const UserManagementPage = () => {
                         <div
                           key={role.roleId}
                           onClick={() => {
-                            handleNewRoleSelect(user.username, role);
+                            handleNewRoleSelect(user.username, role.role);
                             setShowAddRoleDropdown((prev) => !prev);
                           }}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                         >
-                          {role.name}
+                          {role.role}
                         </div>
                       ))}
                     </div>

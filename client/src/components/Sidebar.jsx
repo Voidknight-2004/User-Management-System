@@ -1,7 +1,13 @@
 import React from "react";
 import { FaHome, FaRegFileAlt, FaCog } from "react-icons/fa";
+import { useAuth } from "../context/AuthProvider";
+import { useState, useEffect } from "react";
 
 const Sidebar = ({ sidebarToggle }) => {
+  const [currentUser, setCurrentuser] = useState(null);
+  const { auth } = useAuth();
+  const username = auth.user;
+
   return (
     <div
       className={` ${
@@ -19,14 +25,11 @@ const Sidebar = ({ sidebarToggle }) => {
             Home
           </a>
         </li>
+
         <li className="mb-2 rounded hover:bg-blue-500 py-2">
-          <a href="" className="px-3">
-            <FaHome className="inline-block w-6 h-6 mr-2 -mt-2"></FaHome>Blogs
-          </a>
-        </li>
-        <li className="mb-2 rounded hover:bg-blue-500 py-2">
-          <a href="" className="px-3">
-            <FaCog className="inline-block w-6 h-6 mr-2 -mt-2"></FaCog>Settings
+          <a href="/management" className="px-3">
+            <FaCog className="inline-block w-6 h-6 mr-2 -mt-2"></FaCog>Manage
+            Roles
           </a>
         </li>
       </ul>
