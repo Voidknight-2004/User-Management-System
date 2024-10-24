@@ -82,11 +82,38 @@ const getUsers = async (req, res) => {
     res.status(500).json({ error: "Could not get user" });
   }
 };
+const getUser = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const userInstance = await userModel.findOne({
+      where: {
+        username: username,
+      },
+      include: [
+        {
+          model: roleModel,
+          as: "Roles",
+          attributes: ["roleId", "role"],
+          through: { attributes: [] },
+        },
+      ],
+    });
+    if (userInstance) {
+      res.status(201).json([userInstance]);
+    } else {
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (err) {
+    console.error("Error getting user:", err);
+    res.status(500).json({ error: "Could not get user" });
+  }
+};
 
 const userController = {
   signup,
   signin,
   getUsers,
+  getUser,
 };
 
 export default userController;

@@ -30,6 +30,7 @@ const UserManagementPage = () => {
         });
         return acc;
       }, []);
+     
       setNewRoleOptions(roles);
     } catch (err) {
       console.log("Could not fetch users");

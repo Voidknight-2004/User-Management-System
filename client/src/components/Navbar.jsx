@@ -4,20 +4,67 @@ import { jwtDecode } from "jwt-decode";
 import { useAuth } from "../context/AuthProvider";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
+import { useUser } from "../context/userProvider";
 
 const Navbar = ({ sidebarToggle, setSidebarToggle }) => {
-  const [profile, setProfile] = useState("");
-  const [selectedOption, setSelectedOption] = useState("");
-  const userToken = Cookies.get("token");
+  const {
+    profile,
+    setProfile,
+    currentRoles,
+    setCurrentRoles,
+    selectedOption,
+    setSelectedOption,
+  } = useUser();
+
+  // const [profile, setProfile] = useState("");
+
+  // const [currentRoles, setCurrentRoles] = useState([]);
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const userRoles = userToken ? jwtDecode(userToken).roles : [];
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userToken) {
-      setProfile(jwtDecode(userToken).username);
+    const fetchData = async () => {
+      const storedToken = Cookies.get("token");
+      if (storedToken) {
+        await fetchRoles(storedToken);
+      }
+      if (storedToken) {
+        setProfile(jwtDecode(storedToken).username);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  const fetchRoles = async (token) => {
+    try {
+      const username = jwtDecode(token).username;
+      const response = await axios.get(`/users/getinfo/${username}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = response.data;
+      if (response.status === 201) {
+        const roles = data.reduce((acc, user) => {
+          user.Roles.forEach((role) => {
+            if (!acc.some((r) => r.roleId === role.roleId)) {
+              acc.push(role);
+            }
+          });
+          return acc;
+        }, []);
+        const roleNames = roles.map((role) => role.role);
+        setCurrentRoles(roleNames);
+      }
+    } catch (err) {
+      console.log(err);
     }
-  }, [userToken]);
+  };
 
   const handleOptionChange = (event) => {
     setSelectedOption(event.target.value);
@@ -25,9 +72,14 @@ const Navbar = ({ sidebarToggle, setSidebarToggle }) => {
 
   const handleLogout = (e) => {
     e.preventDefault();
+    setSelectedOption("default");
     logout();
     navigate("/signin");
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <nav className="bg-gray-800 px-4 py-3 flex justify-between">
@@ -65,7 +117,7 @@ const Navbar = ({ sidebarToggle, setSidebarToggle }) => {
               value={selectedOption}
               onChange={handleOptionChange}
             >
-              {userRoles.map((role, index) => (
+              {currentRoles.map((role, index) => (
                 <option key={index} value={role}>
                   {role}
                 </option>
